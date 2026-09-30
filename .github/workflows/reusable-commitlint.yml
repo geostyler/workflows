@@ -1,0 +1,21 @@
+name: Reusable - Lint Commit Messages
+
+on:
+  workflow_call:
+    inputs:
+      config-file:
+        description: Path to the commitlint config file in the calling repository.
+        required: false
+        type: string
+        default: .commitlintrc.cjs
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: ${{ inputs.config-file }}

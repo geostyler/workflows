@@ -1,0 +1,27 @@
+name: Reusable - Discord Notification
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        description: >
+          Message to post to Discord. Defaults to a message announcing that
+          the release that triggered this workflow has been published.
+        required: false
+        type: string
+        default: '${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀'
+    secrets:
+      discord-webhook:
+        description: Discord webhook URL to send the notification to.
+        required: true
+
+jobs:
+  discord-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord notification 📯
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.discord-webhook }}
+        uses: Ilshidur/action-discord@0.4.0
+        with:
+          args: ${{ inputs.message }}

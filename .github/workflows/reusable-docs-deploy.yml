@@ -1,0 +1,74 @@
+name: Reusable - Deploy Documentation to GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version used to build the documentation.
+        required: false
+        type: string
+        default: '24'
+      package-manager:
+        description: Package manager used to install dependencies. One of "npm" or "bun".
+        required: false
+        type: string
+        default: npm
+      build-command:
+        description: Command used to build the documentation.
+        required: false
+        type: string
+        default: npm run build-styleguide
+      build-output-folder:
+        description: Folder that contains the built documentation to deploy.
+        required: false
+        type: string
+        default: build/styleguide
+      target-folder:
+        description: >
+          Target folder on the gh-pages branch to deploy to, e.g. "latest", "main" or "v1.2.3".
+          Use the version-target-folder input in addition when a versioned deployment is desired.
+        required: false
+        type: string
+        default: latest
+      deploy-branch:
+        description: Branch to deploy the documentation to.
+        required: false
+        type: string
+        default: gh-pages
+
+jobs:
+  build_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js ${{ inputs.node-version }}
+        if: inputs.package-manager == 'npm'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Set up bun
+        if: inputs.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies (npm) ⏬
+        if: inputs.package-manager == 'npm'
+        run: npm ci
+
+      - name: Install dependencies (bun) ⏬
+        if: inputs.package-manager == 'bun'
+        run: bun install
+
+      - name: Build documentation 🏗️
+        run: ${{ inputs.build-command }}
+
+      - name: Deploy (to ${{ inputs.target-folder }}) 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: ${{ inputs.deploy-branch }}
+          folder: ${{ inputs.build-output-folder }}
+          target-folder: ${{ inputs.target-folder }}

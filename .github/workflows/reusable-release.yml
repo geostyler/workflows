@@ -1,0 +1,101 @@
+name: Reusable - Release
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version used to build and release the package.
+        required: false
+        type: string
+        default: '24'
+      package-manager:
+        description: Package manager used to install dependencies and build artifacts. One of "npm" or "bun".
+        required: false
+        type: string
+        default: npm
+      build-command:
+        description: Command used to build the release artifacts.
+        required: false
+        type: string
+        default: npm run build
+      release-method:
+        description: >
+          How semantic-release is executed. One of "npx" (runs `npx semantic-release` directly,
+          authenticating with the GITHUB_TOKEN secret) or "action" (uses cycjimmy/semantic-release-action,
+          authenticating with the github-token and npm-token secrets).
+        required: false
+        type: string
+        default: npx
+    outputs:
+      tag_name:
+        description: The tag name that was released, empty if no release was made.
+        value: ${{ jobs.release.outputs.tag_name }}
+    secrets:
+      github-token:
+        description: Token used to authenticate with GitHub and npm's semantic-release plugins.
+        required: true
+      npm-token:
+        description: Token used to authenticate with the npm registry. Only needed when release-method is "action".
+        required: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    outputs:
+      tag_name: ${{ steps.get-release-tag.outputs.tag_name }}
+    steps:
+      - name: Checkout sources 🔰
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ inputs.node-version }} 👷🏻
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Set up bun
+        if: inputs.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Prepare git config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies (npm) ⏬
+        if: inputs.package-manager == 'npm'
+        run: npm ci
+
+      - name: Install dependencies (bun) ⏬
+        if: inputs.package-manager == 'bun'
+        run: bun install --frozen-lockfile
+
+      - name: Build artifacts 🏗️
+        run: ${{ inputs.build-command }}
+
+      - id: semantic-release-npx
+        name: Release with Semantic Release (npx) 🚀
+        if: inputs.release-method == 'npx'
+        env:
+          GITHUB_TOKEN: ${{ secrets.github-token }}
+          NPM_TOKEN: ${{ secrets.npm-token }}
+        run: npx semantic-release
+
+      - id: semantic-release-action
+        name: Release with Semantic Release (action) 🚀
+        if: inputs.release-method == 'action'
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.github-token }}
+          NPM_TOKEN: ${{ secrets.npm-token }}
+
+      - id: get-release-tag
+        name: Determine released version 🔖
+        run: |
+          TAG_NAME=$(git tag --points-at HEAD)
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"

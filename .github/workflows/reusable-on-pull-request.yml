@@ -1,0 +1,109 @@
+name: Reusable - Build, Lint & Test
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        description: JSON array of Node.js versions to run the build matrix against, e.g. '["22", "24"]'.
+        required: false
+        type: string
+        default: '["24"]'
+      package-manager:
+        description: Package manager used to install dependencies. One of "npm" or "bun".
+        required: false
+        type: string
+        default: npm
+      install-command:
+        description: Custom install command. Defaults to "npm ci" or "bun install" depending on package-manager.
+        required: false
+        type: string
+        default: ''
+      lint-command:
+        description: Command used to lint the code. Set to an empty string to skip this step.
+        required: false
+        type: string
+        default: npm run lint
+      typecheck-command:
+        description: Command used to type check the code. Set to an empty string to skip this step.
+        required: false
+        type: string
+        default: ''
+      test-command:
+        description: Command used to test the code. Set to an empty string to skip this step.
+        required: false
+        type: string
+        default: npm run test-ci
+      build-command:
+        description: Command used to build artifacts. Set to an empty string to skip this step.
+        required: false
+        type: string
+        default: npm run build
+      enable-coveralls:
+        description: Whether to publish coverage results to Coveralls after the test step.
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ fromJson(inputs.node-versions) }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        if: inputs.package-manager == 'npm'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Set up bun
+        if: inputs.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Cache Node.js modules 💾
+        if: inputs.package-manager == 'npm'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node-
+            ${{ runner.OS }}-
+
+      - name: Install dependencies (npm) ⏬
+        if: inputs.package-manager == 'npm' && inputs.install-command == ''
+        run: npm ci
+
+      - name: Install dependencies (bun) ⏬
+        if: inputs.package-manager == 'bun' && inputs.install-command == ''
+        run: bun install
+
+      - name: Install dependencies (custom) ⏬
+        if: inputs.install-command != ''
+        run: ${{ inputs.install-command }}
+
+      - name: Lint code 💄
+        if: inputs.lint-command != ''
+        run: ${{ inputs.lint-command }}
+
+      - name: Type check 🔍
+        if: inputs.typecheck-command != ''
+        run: ${{ inputs.typecheck-command }}
+
+      - name: Test code ✅
+        if: inputs.test-command != ''
+        run: ${{ inputs.test-command }}
+
+      - name: Build artifacts 🏗️
+        if: inputs.build-command != ''
+        run: ${{ inputs.build-command }}
+
+      - name: Publish to coveralls ⭐
+        if: inputs.enable-coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
