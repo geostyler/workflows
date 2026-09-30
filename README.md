@@ -52,6 +52,8 @@ on:
 jobs:
   discord-notification:
     uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    with:
+      message: '${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀'
     secrets:
       discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
 ```
@@ -83,6 +85,8 @@ jobs:
     needs: release
     if: needs.release.outputs.tag_name != ''
     uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    with:
+      message: '${{ github.repository }} [${{ needs.release.outputs.tag_name }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.release.outputs.tag_name }}) has been released. 🚀'
     secrets:
       discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
 ```
