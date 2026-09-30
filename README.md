@@ -123,10 +123,10 @@ jobs:
       package-manager: bun
 ```
 
-Switching `package-manager` alone is enough: `install-command`, `lint-command`, `test-command` and
-`build-command` all fall back to smart per-package-manager defaults (e.g. `bun run lint` instead of
-`npm run lint`) when left unset. Override any of them individually if a repository needs a different command,
-or set one to `skip` to omit that step entirely.
+Switching `package-manager` alone is enough: `install-command` falls back to the appropriate package-manager
+install command, while `lint-command`, `typecheck-command`, `test-command` and `build-command` invoke the same
+scripts (`lint`, `check`, `test-ci` and `build`) with that package manager. Override any command individually if a
+repository needs a different one, or set it to `skip` to omit that step entirely.
 
 ## Versioning
 
