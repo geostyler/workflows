@@ -1,4 +1,4 @@
-name: Reusable - Discord Notification
+name: Discord Notification
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Reusable - Build, Lint & Test
+name: Build, Lint & Test
 
 on:
   workflow_call:

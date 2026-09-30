@@ -1,4 +1,4 @@
-name: Reusable - Close Inactive Issues and PRs
+name: Close Inactive Issues and PRs
 
 on:
   workflow_call:
