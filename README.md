@@ -60,8 +60,8 @@ jobs:
 
 ### Example: release
 
-`release.yml` exposes the released `tag_name` as an output, so a caller workflow can chain it with the Discord
-notification, matching the pattern already used in some of the geostyler repositories:
+`release.yml` exposes the released `tag_name` and `release_url` as outputs, so a caller workflow can chain it with the
+Discord notification, matching the pattern already used in some of the geostyler repositories:
 
 ```yaml
 # .github/workflows/release.yml in a consuming repository
@@ -86,7 +86,7 @@ jobs:
     if: needs.release.outputs.tag_name != ''
     uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
     with:
-      message: '${{ github.repository }} [${{ needs.release.outputs.tag_name }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.release.outputs.tag_name }}) has been released. 🚀'
+      message: '${{ github.repository }} [${{ needs.release.outputs.tag_name }}](${{ needs.release.outputs.release_url }}) has been released. 🚀'
     secrets:
       discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
 ```

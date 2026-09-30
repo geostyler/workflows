@@ -30,6 +30,9 @@ on:
       tag_name:
         description: The tag name that was released, empty if no release was made.
         value: ${{ jobs.release.outputs.tag_name }}
+      release_url:
+        description: The URL of the release, empty if no release was made.
+        value: ${{ jobs.release.outputs.release_url }}
     secrets:
       github-token:
         description: Token used to authenticate with GitHub and npm's semantic-release plugins.
@@ -50,6 +53,7 @@ jobs:
       id-token: write
     outputs:
       tag_name: ${{ steps.get-release-tag.outputs.tag_name }}
+      release_url: ${{ steps.get-release-tag.outputs.release_url }}
     steps:
       - name: Checkout sources 🔰
         uses: actions/checkout@v4
@@ -100,3 +104,6 @@ jobs:
         run: |
           TAG_NAME=$(git tag --points-at HEAD)
           echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          if [ -n "$TAG_NAME" ]; then
+            echo "release_url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          fi
