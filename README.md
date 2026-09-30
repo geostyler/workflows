@@ -24,7 +24,7 @@ must be referenced with `uses:` from a caller workflow in the consuming reposito
 | [`notify-discord.yml`](.github/workflows/notify-discord.yml) | `notify-discord.yml` | Sends a release notification to Discord. Requires the `discord-webhook` secret and accepts a customizable `message`. |
 | [`release.yml`](.github/workflows/release.yml) | `release.yml` | Builds and releases the package with [semantic-release](https://semantic-release.gitbook.io/). Supports both `npm`/`bun` (`package-manager` input) and either running `npx semantic-release` directly or via `cycjimmy/semantic-release-action` (`release-method` input). Outputs the released `tag_name` so it can be chained with `notify-discord.yml`. |
 | [`stale.yml`](.github/workflows/stale.yml) | `stale.yml` | Marks and closes inactive issues/PRs with [actions/stale](https://github.com/actions/stale). All thresholds and labels are configurable inputs. |
-| [`on-pull-request.yml`](.github/workflows/on-pull-request.yml) | `on-pullrequest.yml` (and `on-push-main.yml`) | Installs dependencies, lints, type-checks, tests and builds the project. Supports `npm`/`bun`, a configurable Node.js version matrix, custom commands per step and optional Coveralls reporting. Can be called from both `pull_request` and `push` triggers. |
+| [`on-pull-request.yml`](.github/workflows/on-pull-request.yml) | `on-pullrequest.yml` (and `on-push-main.yml`) | Installs dependencies, lints, type-checks, tests and builds the project. Supports `npm`/`bun` with smart per-package-manager command defaults (just switch `package-manager` to `bun` and everything else adapts), a configurable Node.js version matrix, overridable commands per step (or `skip` to omit a step) and optional Coveralls reporting. Can be called from both `pull_request` and `push` triggers. |
 
 ### Example: commitlint
 
@@ -117,10 +117,12 @@ jobs:
     with:
       node-versions: '["22", "24"]'
       package-manager: bun
-      lint-command: bun run lint
-      test-command: bun test
-      build-command: bun run build
 ```
+
+Switching `package-manager` alone is enough: `install-command`, `lint-command`, `test-command` and
+`build-command` all fall back to smart per-package-manager defaults (e.g. `bun run lint` instead of
+`npm run lint`) when left unset. Override any of them individually if a repository needs a different command,
+or set one to `skip` to omit that step entirely.
 
 ## Versioning
 

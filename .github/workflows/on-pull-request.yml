@@ -9,35 +9,46 @@ on:
         type: string
         default: '["24"]'
       package-manager:
-        description: Package manager used to install dependencies. One of "npm" or "bun".
+        description: >
+          Package manager used to install dependencies and run scripts. One of "npm" or "bun".
+          Also drives the smart defaults of install-command, lint-command, test-command and
+          build-command, so switching runtimes usually just means changing this single input.
         required: false
         type: string
         default: npm
       install-command:
-        description: Custom install command. Defaults to "npm ci" or "bun install" depending on package-manager.
+        description: >
+          Custom install command. Leave empty to use the smart default for the selected
+          package-manager ("npm ci" or "bun install").
         required: false
         type: string
         default: ''
       lint-command:
-        description: Command used to lint the code. Set to an empty string to skip this step.
+        description: >
+          Command used to lint the code. Leave empty to use the smart default for the selected
+          package-manager ("npm run lint" or "bun run lint"). Set to "skip" to disable this step.
         required: false
         type: string
-        default: npm run lint
+        default: ''
       typecheck-command:
         description: Command used to type check the code. Set to an empty string to skip this step.
         required: false
         type: string
         default: ''
       test-command:
-        description: Command used to test the code. Set to an empty string to skip this step.
+        description: >
+          Command used to test the code. Leave empty to use the smart default for the selected
+          package-manager ("npm run test-ci" or "bun test"). Set to "skip" to disable this step.
         required: false
         type: string
-        default: npm run test-ci
+        default: ''
       build-command:
-        description: Command used to build artifacts. Set to an empty string to skip this step.
+        description: >
+          Command used to build artifacts. Leave empty to use the smart default for the selected
+          package-manager ("npm run build" or "bun run build"). Set to "skip" to disable this step.
         required: false
         type: string
-        default: npm run build
+        default: ''
       enable-coveralls:
         description: Whether to publish coverage results to Coveralls after the test step.
         required: false
@@ -74,33 +85,44 @@ jobs:
             ${{ runner.OS }}-node-
             ${{ runner.OS }}-
 
-      - name: Install dependencies (npm) ⏬
-        if: inputs.package-manager == 'npm' && inputs.install-command == ''
-        run: npm ci
+      - name: Determine package-manager defaults
+        id: defaults
+        shell: bash
+        run: |
+          if [ "${{ inputs.package-manager }}" = "bun" ]; then
+            {
+              echo "install-command=bun install"
+              echo "lint-command=bun run lint"
+              echo "test-command=bun test"
+              echo "build-command=bun run build"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "install-command=npm ci"
+              echo "lint-command=npm run lint"
+              echo "test-command=npm run test-ci"
+              echo "build-command=npm run build"
+            } >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Install dependencies (bun) ⏬
-        if: inputs.package-manager == 'bun' && inputs.install-command == ''
-        run: bun install
-
-      - name: Install dependencies (custom) ⏬
-        if: inputs.install-command != ''
-        run: ${{ inputs.install-command }}
+      - name: Install dependencies ⏬
+        run: ${{ inputs.install-command || steps.defaults.outputs.install-command }}
 
       - name: Lint code 💄
-        if: inputs.lint-command != ''
-        run: ${{ inputs.lint-command }}
+        if: inputs.lint-command != 'skip'
+        run: ${{ inputs.lint-command || steps.defaults.outputs.lint-command }}
 
       - name: Type check 🔍
         if: inputs.typecheck-command != ''
         run: ${{ inputs.typecheck-command }}
 
       - name: Test code ✅
-        if: inputs.test-command != ''
-        run: ${{ inputs.test-command }}
+        if: inputs.test-command != 'skip'
+        run: ${{ inputs.test-command || steps.defaults.outputs.test-command }}
 
       - name: Build artifacts 🏗️
-        if: inputs.build-command != ''
-        run: ${{ inputs.build-command }}
+        if: inputs.build-command != 'skip'
+        run: ${{ inputs.build-command || steps.defaults.outputs.build-command }}
 
       - name: Publish to coveralls ⭐
         if: inputs.enable-coveralls
