@@ -91,15 +91,17 @@ jobs:
         run: |
           if [ "${{ inputs.package-manager }}" = "bun" ]; then
             {
-              echo "install-command=bun install"
+              echo "install-command=bun ci"
               echo "lint-command=bun run lint"
-              echo "test-command=bun test"
+              echo "typecheck-command=bun run check"
+              echo "test-command=bun run test-ci"
               echo "build-command=bun run build"
             } >> "$GITHUB_OUTPUT"
           else
             {
               echo "install-command=npm ci"
               echo "lint-command=npm run lint"
+              echo "typecheck-command=npm run check"
               echo "test-command=npm run test-ci"
               echo "build-command=npm run build"
             } >> "$GITHUB_OUTPUT"

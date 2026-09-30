@@ -33,6 +33,7 @@ on:
     secrets:
       github-token:
         description: Token used to authenticate with GitHub and npm's semantic-release plugins.
+          Requires  contents, issues, pull-requests and id-token write permissions. Usually this is ${{ secrets.GITHUB_TOKEN }}.
         required: true
       npm-token:
         description: Token used to authenticate with the npm registry. Only needed when release-method is "action".
