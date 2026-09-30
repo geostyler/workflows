@@ -52,14 +52,16 @@ on:
 jobs:
   discord-notification:
     uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    with:
+      message: '${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀'
     secrets:
       discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
 ```
 
 ### Example: release
 
-`release.yml` exposes the released `tag_name` as an output, so a caller workflow can chain it with the Discord
-notification, matching the pattern already used in some of the geostyler repositories:
+`release.yml` exposes the released `tag_name` and `release_url` as outputs, so a caller workflow can chain it with the
+Discord notification, matching the pattern already used in some of the geostyler repositories:
 
 ```yaml
 # .github/workflows/release.yml in a consuming repository
@@ -83,6 +85,8 @@ jobs:
     needs: release
     if: needs.release.outputs.tag_name != ''
     uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    with:
+      message: '${{ github.repository }} [${{ needs.release.outputs.tag_name }}](${{ needs.release.outputs.release_url }}) has been released. 🚀'
     secrets:
       discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
 ```
@@ -119,10 +123,10 @@ jobs:
       package-manager: bun
 ```
 
-Switching `package-manager` alone is enough: `install-command`, `lint-command`, `test-command` and
-`build-command` all fall back to smart per-package-manager defaults (e.g. `bun run lint` instead of
-`npm run lint`) when left unset. Override any of them individually if a repository needs a different command,
-or set one to `skip` to omit that step entirely.
+Switching `package-manager` alone is enough: `install-command` falls back to the appropriate package-manager
+install command, while `lint-command`, `typecheck-command`, `test-command` and `build-command` invoke the same
+scripts (`lint`, `check`, `test-ci` and `build`) with that package manager. Override any command individually if a
+repository needs a different one, or set it to `skip` to omit that step entirely.
 
 ## Versioning
 
