@@ -1,0 +1,131 @@
+name: Build, Lint & Test
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        description: JSON array of Node.js versions to run the build matrix against, e.g. '["22", "24"]'.
+        required: false
+        type: string
+        default: '["24"]'
+      package-manager:
+        description: >
+          Package manager used to install dependencies and run scripts. One of "npm" or "bun".
+          Also drives the smart defaults of install-command, lint-command, test-command and
+          build-command, so switching runtimes usually just means changing this single input.
+        required: false
+        type: string
+        default: npm
+      install-command:
+        description: >
+          Custom install command. Leave empty to use the smart default for the selected
+          package-manager ("npm ci" or "bun install").
+        required: false
+        type: string
+        default: ''
+      lint-command:
+        description: >
+          Command used to lint the code. Leave empty to use the smart default for the selected
+          package-manager ("npm run lint" or "bun run lint"). Set to "skip" to disable this step.
+        required: false
+        type: string
+        default: ''
+      typecheck-command:
+        description: Command used to type check the code. Set to an empty string to skip this step.
+        required: false
+        type: string
+        default: ''
+      test-command:
+        description: >
+          Command used to test the code. Leave empty to use the smart default for the selected
+          package-manager ("npm run test-ci" or "bun test"). Set to "skip" to disable this step.
+        required: false
+        type: string
+        default: ''
+      build-command:
+        description: >
+          Command used to build artifacts. Leave empty to use the smart default for the selected
+          package-manager ("npm run build" or "bun run build"). Set to "skip" to disable this step.
+        required: false
+        type: string
+        default: ''
+      enable-coveralls:
+        description: Whether to publish coverage results to Coveralls after the test step.
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ fromJson(inputs.node-versions) }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        if: inputs.package-manager == 'npm'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Set up bun
+        if: inputs.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Cache Node.js modules 💾
+        if: inputs.package-manager == 'npm'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node-
+            ${{ runner.OS }}-
+
+      - name: Determine package-manager defaults
+        id: defaults
+        shell: bash
+        run: |
+          if [ "${{ inputs.package-manager }}" = "bun" ]; then
+            {
+              echo "install-command=bun install"
+              echo "lint-command=bun run lint"
+              echo "test-command=bun test"
+              echo "build-command=bun run build"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "install-command=npm ci"
+              echo "lint-command=npm run lint"
+              echo "test-command=npm run test-ci"
+              echo "build-command=npm run build"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies ⏬
+        run: ${{ inputs.install-command || steps.defaults.outputs.install-command }}
+
+      - name: Lint code 💄
+        if: inputs.lint-command != 'skip'
+        run: ${{ inputs.lint-command || steps.defaults.outputs.lint-command }}
+
+      - name: Type check 🔍
+        if: inputs.typecheck-command != ''
+        run: ${{ inputs.typecheck-command }}
+
+      - name: Test code ✅
+        if: inputs.test-command != 'skip'
+        run: ${{ inputs.test-command || steps.defaults.outputs.test-command }}
+
+      - name: Build artifacts 🏗️
+        if: inputs.build-command != 'skip'
+        run: ${{ inputs.build-command || steps.defaults.outputs.build-command }}
+
+      - name: Publish to coveralls ⭐
+        if: inputs.enable-coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

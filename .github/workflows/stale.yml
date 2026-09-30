@@ -1,0 +1,58 @@
+name: Close Inactive Issues and PRs
+
+on:
+  workflow_call:
+    inputs:
+      days-before-issue-stale:
+        description: Number of days of inactivity before an issue is marked as stale.
+        required: false
+        type: number
+        default: 180
+      days-before-issue-close:
+        description: Number of days after being marked stale before an issue is closed. Use -1 to never close.
+        required: false
+        type: number
+        default: -1
+      days-before-pr-stale:
+        description: Number of days of inactivity before a pull request is marked as stale.
+        required: false
+        type: number
+        default: 365
+      days-before-pr-close:
+        description: Number of days after being marked stale before a pull request is closed. Use -1 to never close.
+        required: false
+        type: number
+        default: -1
+      exempt-issue-labels:
+        description: Comma separated list of labels that exempt an issue from being marked stale.
+        required: false
+        type: string
+        default: permanent
+      exempt-pr-labels:
+        description: Comma separated list of labels that exempt a pull request from being marked stale.
+        required: false
+        type: string
+        default: permanent
+
+jobs:
+  close-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-issue-stale: ${{ inputs.days-before-issue-stale }}
+          days-before-issue-close: ${{ inputs.days-before-issue-close }}
+          stale-issue-label: "stale"
+          stale-issue-message: "This issue is stale because it has been open for ${{ inputs.days-before-issue-stale }} days with no activity. Feel free to unstale it at any time by adding a comment."
+          close-issue-message: "This issue was closed because it has been inactive since being marked as stale. Feel free to reopen it at any time, if this issue is still relevant."
+          exempt-issue-labels: ${{ inputs.exempt-issue-labels }}
+          days-before-pr-stale: ${{ inputs.days-before-pr-stale }}
+          days-before-pr-close: ${{ inputs.days-before-pr-close }}
+          stale-pr-label: "stale"
+          stale-pr-message: "This PR is stale because it has been open for ${{ inputs.days-before-pr-stale }} days with no activity. Feel free to unstale it at any time by adding a comment."
+          close-pr-message: "This PR was closed because it has been inactive since being marked as stale. Feel free to reopen it at any time, if you are still working on it."
+          exempt-pr-labels: ${{ inputs.exempt-pr-labels }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
