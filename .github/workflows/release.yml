@@ -39,7 +39,7 @@ on:
           Requires  contents, issues, pull-requests and id-token write permissions. Usually this is ${{ secrets.GITHUB_TOKEN }}.
         required: true
       npm-token:
-        description: Token used to authenticate with the npm registry. Only needed when release-method is "action".
+        description: Token used to authenticate with the npm registry. Required to publish the package, for both release-methods.
         required: false
 
 jobs:
