@@ -63,7 +63,7 @@ jobs:
         node-version: ${{ fromJson(inputs.node-versions) }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Use Node.js ${{ matrix.node-version }}
         if: inputs.package-manager == 'npm'
