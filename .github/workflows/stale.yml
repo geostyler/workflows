@@ -41,7 +41,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v11
         with:
           days-before-issue-stale: ${{ inputs.days-before-issue-stale }}
           days-before-issue-close: ${{ inputs.days-before-issue-close }}
