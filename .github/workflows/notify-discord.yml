@@ -5,11 +5,10 @@ on:
     inputs:
       message:
         description: >
-          Message to post to Discord. Defaults to a message announcing that
-          the release that triggered this workflow has been published.
-        required: false
+          Message to post to Discord. For example it could look something like this:
+          '${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀'
+        required: true
         type: string
-        default: '${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀'
     secrets:
       discord-webhook:
         description: Discord webhook URL to send the notification to.
