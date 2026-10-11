@@ -89,7 +89,7 @@ jobs:
       - id: semantic-release-action
         name: Release with Semantic Release (action) 🚀
         if: inputs.release-method == 'action'
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@v7.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.github-token }}
           NPM_TOKEN: ${{ secrets.npm-token }}
