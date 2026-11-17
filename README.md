@@ -52,14 +52,16 @@ on:
 jobs:
   discord-notification:
     uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    with:
+      message: ${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀
     secrets:
       discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
 ```
 
 ### Example: release
 
-`release.yml` exposes the released `tag_name` as an output, so a caller workflow can chain it with the Discord
-notification, matching the pattern already used in some of the geostyler repositories:
+`release.yml` exposes the released `tag_name` and `release_url` as outputs, so a caller workflow can chain it with the
+Discord notification, matching the pattern already used in some of the geostyler repositories:
 
 ```yaml
 # .github/workflows/release.yml in a consuming repository
@@ -68,6 +70,12 @@ on:
   workflow_dispatch:
   push:
     branches: [next]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
 
 jobs:
   release:
@@ -83,6 +91,8 @@ jobs:
     needs: release
     if: needs.release.outputs.tag_name != ''
     uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    with:
+      message: ${{ github.event.repository.name }} [${{ needs.release.outputs.tag_name }}] has been released. 🚀
     secrets:
       discord-webhook: ${{ secrets.DISCORD_WEBHOOK }}
 ```
@@ -98,6 +108,10 @@ name: Close inactive issues
 on:
   schedule:
     - cron: "30 1 * * *"
+
+permissions:
+  issues: write
+  pull-requests: write
 
 jobs:
   close-issues:
@@ -119,10 +133,30 @@ jobs:
       package-manager: bun
 ```
 
-Switching `package-manager` alone is enough: `install-command`, `lint-command`, `test-command` and
-`build-command` all fall back to smart per-package-manager defaults (e.g. `bun run lint` instead of
-`npm run lint`) when left unset. Override any of them individually if a repository needs a different command,
-or set one to `skip` to omit that step entirely.
+Switching `package-manager` alone is enough: `install-command`, `lint-command`, `typecheck-command`,
+`test-command` and `build-command` all fall back to smart per-package-manager defaults (e.g. `bun run lint`
+instead of `npm run lint`) when left unset. Override any of them individually if a repository needs a
+different command, or set one to `skip` to omit that step entirely.
+
+## Permissions
+
+Reusable workflows cannot raise token permissions on their own: a job's `permissions:` block (such as the ones
+in `release.yml` and `stale.yml`) can only *reduce* the scope of the `GITHUB_TOKEN`, never expand it. The
+effective permissions are therefore determined by the **calling** workflow:
+
+- If the caller workflow sets `permissions:`, the token of the called workflow gets the intersection of both.
+- If the caller sets nothing, the token falls back to the repository's default permissions (usually read-only),
+  and jobs that need write access will fail.
+
+The consuming workflow must therefore grant every permission the called workflow requires:
+
+| Workflow | Permissions required by the caller |
+| --- | --- |
+| `release.yml` | `contents: write`, `issues: write`, `pull-requests: write`, `id-token: write` |
+| `stale.yml` | `issues: write`, `pull-requests: write` |
+| `commitlint.yml`, `notify-discord.yml`, `on-pull-request.yml` | none beyond the read-only default |
+
+The examples above already include the necessary `permissions:` blocks.
 
 ## Versioning
 

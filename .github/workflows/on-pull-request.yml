@@ -11,8 +11,8 @@ on:
       package-manager:
         description: >
           Package manager used to install dependencies and run scripts. One of "npm" or "bun".
-          Also drives the smart defaults of install-command, lint-command, test-command and
-          build-command, so switching runtimes usually just means changing this single input.
+          Also drives the smart defaults of install-command, lint-command, typecheck-command,
+          test-command and build-command, so switching runtimes usually just means changing this input.
         required: false
         type: string
         default: npm
@@ -31,14 +31,16 @@ on:
         type: string
         default: ''
       typecheck-command:
-        description: Command used to type check the code. Set to an empty string to skip this step.
+        description: >
+          Command used to type check the code. Leave empty to use the smart default for the selected
+          package-manager ("npm run check" or "bun run check"). Set to "skip" to disable this step.
         required: false
         type: string
         default: ''
       test-command:
         description: >
           Command used to test the code. Leave empty to use the smart default for the selected
-          package-manager ("npm run test-ci" or "bun test"). Set to "skip" to disable this step.
+          package-manager ("npm run test-ci" or "bun run test-ci"). Set to "skip" to disable this step.
         required: false
         type: string
         default: ''
@@ -91,15 +93,17 @@ jobs:
         run: |
           if [ "${{ inputs.package-manager }}" = "bun" ]; then
             {
-              echo "install-command=bun install"
+              echo "install-command=bun ci"
               echo "lint-command=bun run lint"
-              echo "test-command=bun test"
+              echo "typecheck-command=bun run check"
+              echo "test-command=bun run test-ci"
               echo "build-command=bun run build"
             } >> "$GITHUB_OUTPUT"
           else
             {
               echo "install-command=npm ci"
               echo "lint-command=npm run lint"
+              echo "typecheck-command=npm run check"
               echo "test-command=npm run test-ci"
               echo "build-command=npm run build"
             } >> "$GITHUB_OUTPUT"
@@ -113,8 +117,8 @@ jobs:
         run: ${{ inputs.lint-command || steps.defaults.outputs.lint-command }}
 
       - name: Type check 🔍
-        if: inputs.typecheck-command != ''
-        run: ${{ inputs.typecheck-command }}
+        if: inputs.typecheck-command != 'skip'
+        run: ${{ inputs.typecheck-command || steps.defaults.outputs.typecheck-command }}
 
       - name: Test code ✅
         if: inputs.test-command != 'skip'
