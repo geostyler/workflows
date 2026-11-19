@@ -4,9 +4,7 @@ on:
   workflow_call:
     inputs:
       message:
-        description: >
-          Message to post to Discord. For example it could look something like this:
-          '${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀'
+        description: Message to post to Discord, e.g. "My repo [v1.2.3](https://github.com/org/my-repo/releases/tag/v1.2.3) has been released."
         required: true
         type: string
     secrets:

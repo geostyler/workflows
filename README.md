@@ -35,7 +35,7 @@ on: [pull_request, push]
 
 jobs:
   commitlint:
-    uses: geostyler/workflows/.github/workflows/commitlint.yml@main
+    uses: geostyler/workflows/.github/workflows/commitlint.yml@v1.0.1
     with:
       config-file: .commitlintrc.cjs
 ```
@@ -51,7 +51,7 @@ on:
 
 jobs:
   discord-notification:
-    uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    uses: geostyler/workflows/.github/workflows/notify-discord.yml@v1.0.1
     with:
       message: ${{ github.event.repository.name }} [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }}) has been released. 🚀
     secrets:
@@ -79,7 +79,7 @@ permissions:
 
 jobs:
   release:
-    uses: geostyler/workflows/.github/workflows/release.yml@main
+    uses: geostyler/workflows/.github/workflows/release.yml@v1.0.1
     with:
       package-manager: bun
       release-method: action
@@ -90,7 +90,7 @@ jobs:
   notify-discord:
     needs: release
     if: needs.release.outputs.tag_name != ''
-    uses: geostyler/workflows/.github/workflows/notify-discord.yml@main
+    uses: geostyler/workflows/.github/workflows/notify-discord.yml@v1.0.1
     with:
       message: ${{ github.event.repository.name }} [${{ needs.release.outputs.tag_name }}] has been released. 🚀
     secrets:
@@ -115,7 +115,7 @@ permissions:
 
 jobs:
   close-issues:
-    uses: geostyler/workflows/.github/workflows/stale.yml@main
+    uses: geostyler/workflows/.github/workflows/stale.yml@v1.0.1
 ```
 
 ### Example: on-pull-request
@@ -127,7 +127,7 @@ on: pull_request
 
 jobs:
   build:
-    uses: geostyler/workflows/.github/workflows/on-pull-request.yml@main
+    uses: geostyler/workflows/.github/workflows/on-pull-request.yml@v1.0.1
     with:
       node-versions: '["22", "24"]'
       package-manager: bun
@@ -161,5 +161,5 @@ The examples above already include the necessary `permissions:` blocks.
 ## Versioning
 
 Consuming workflows should pin to a specific tag or commit SHA of this repository (e.g.
-`geostyler/workflows/.github/workflows/release.yml@v1`) instead of `@main` once this repository starts
-tagging releases, to avoid unexpected breaking changes.
+`geostyler/workflows/.github/workflows/release.yml@v1.0.1`) instead of `@main`, to avoid unexpected
+breaking changes.
